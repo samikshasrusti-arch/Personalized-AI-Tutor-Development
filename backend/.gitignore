@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+*.db
+*.sqlite3
+
+# Secrets — NEVER commit these
+.env
+
+# IDE
+.vscode/
+.idea/
