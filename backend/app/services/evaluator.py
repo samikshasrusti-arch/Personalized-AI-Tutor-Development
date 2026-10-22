@@ -184,7 +184,13 @@ def evaluate_fill_blank(learner_ans: str, expected_ans: str) -> Tuple[bool, str]
         if l_clean != e_clean:
             return False, f"Not quite. Python keywords are case-sensitive. Expected: '{e_clean}', got: '{l_clean}'."
 
-    # 4. Equivalent Python string quotes (e.g. 'hello' vs "hello")
+    # 4a. Case-insensitive match for plain (non-keyword) identifiers
+    # Only applies when NEITHER answer is a Python keyword (keyword case already enforced above).
+    if e_clean not in python_keywords and l_clean not in python_keywords:
+        if _clean_str(l_clean).lower() == _clean_str(e_clean).lower():
+            return True, "Correct! Great job."
+
+    # 4b. Equivalent Python string quotes (e.g. 'hello' vs "hello")
     if len(l_clean) >= 2 and len(e_clean) >= 2:
         l_is_quoted = (l_clean[0] in ("'", '"') and l_clean[-1] == l_clean[0])
         e_is_quoted = (e_clean[0] in ("'", '"') and e_clean[-1] == e_clean[0])
