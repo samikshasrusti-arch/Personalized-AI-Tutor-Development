@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict
 
 
 # ─── Profile ────────────────────────────────────────────────────────────────
@@ -43,14 +43,14 @@ class MarkCompleteRequest(BaseModel):
 # ─── Practice ───────────────────────────────────────────────────────────────
 
 class GeneratePracticeRequest(BaseModel):
-    topicId: str
-    topic: str
+    topicId: str = Field(..., min_length=1, max_length=64)
+    topic: str = Field(..., min_length=1, max_length=100)
     difficulty: Literal["easy", "medium", "hard"] = "easy"
     questionType: Literal["multiple_choice", "predict_output", "fill_blank", "find_error", "short_coding"] = "multiple_choice"
     profile: ProfileSchema
 
 
-class PracticeQuestion(BaseModel):
+class PracticeQuestionPublic(BaseModel):
     questionId: str
     topicId: str
     topic: str
@@ -58,25 +58,28 @@ class PracticeQuestion(BaseModel):
     questionType: str
     questionText: str
     options: Optional[List[str]] = None
-    expectedAnswer: Optional[str] = None
-    explanation: str
-    hint: str
+    hint: str = ""
+
+
+class PracticeQuestion(PracticeQuestionPublic):
+    expectedAnswer: Optional[str] = ""
+    explanation: Optional[str] = ""
 
 
 class EvaluatePracticeRequest(BaseModel):
-    questionId: str
-    topicId: str
-    topic: str
-    questionType: str
-    questionText: str
+    questionId: str = Field(..., min_length=1, max_length=64)
+    learnerAnswer: str = Field(..., min_length=1, max_length=5000)
+    topicId: str = Field(default="", max_length=64)
+    topic: str = Field(default="", max_length=100)
+    questionType: str = Field(default="multiple_choice", max_length=50)
+    questionText: str = Field(default="", max_length=5000)
     options: Optional[List[str]] = None
     expectedAnswer: Optional[str] = None
-    learnerAnswer: str
-    hint: str
-    explanation: str
-    profile: ProfileSchema
-    learnerId: str = ""
-    difficulty: str = "easy"
+    hint: Optional[str] = ""
+    explanation: Optional[str] = ""
+    profile: Optional[ProfileSchema] = None
+    learnerId: str = Field(default="", max_length=64)
+    difficulty: str = Field(default="easy", max_length=20)
 
 
 class EvaluationResult(BaseModel):
@@ -91,37 +94,48 @@ class EvaluationResult(BaseModel):
 # ─── Quiz ───────────────────────────────────────────────────────────────────
 
 class CreateQuizRequest(BaseModel):
-    topicId: str
-    topic: str
+    topicId: str = Field(..., min_length=1, max_length=64)
+    topic: str = Field(..., min_length=1, max_length=100)
     difficulty: Literal["easy", "medium", "hard"] = "easy"
     questionCount: int = Field(default=5, ge=3, le=15)
     profile: ProfileSchema
 
 
-class QuizQuestion(BaseModel):
+class QuizQuestionPublic(BaseModel):
     questionId: str
     questionText: str
     options: List[str]
-    correctAnswer: str
-    explanation: str
-    hint: str
-    topic: str
-    difficulty: str
+    hint: str = ""
+    topic: str = ""
+    difficulty: str = ""
+
+
+class QuizQuestion(QuizQuestionPublic):
+    correctAnswer: Optional[str] = ""
+    explanation: Optional[str] = ""
 
 
 class QuizQuestionWithAnswer(QuizQuestion):
     pass
 
 
-class SubmitQuizRequest(BaseModel):
-    learnerId: str
-    topicId: str
-    topicTitle: str
+class CreateQuizResponse(BaseModel):
+    quizId: str
+    questions: List[QuizQuestionPublic]
+    topic: str
     difficulty: str
-    questions: List[QuizQuestion]
-    answers: dict           # questionId -> learner's answer string
-    timeTakenSeconds: int = 0
-    profile: ProfileSchema
+
+
+class SubmitQuizRequest(BaseModel):
+    quizId: str = Field(..., min_length=1, max_length=64)
+    learnerId: str = Field(default="", max_length=64)
+    topicId: str = Field(default="", max_length=64)
+    topicTitle: str = Field(default="", max_length=100)
+    difficulty: str = Field(default="easy", max_length=20)
+    questions: Optional[List[QuizQuestion]] = None
+    answers: Dict[str, str] = Field(default_factory=dict)
+    timeTakenSeconds: int = Field(default=0, ge=0, le=86400)
+    profile: Optional[ProfileSchema] = None
 
 
 class QuizAnswerResult(BaseModel):

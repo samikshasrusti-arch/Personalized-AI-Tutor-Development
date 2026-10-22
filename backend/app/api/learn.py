@@ -14,7 +14,7 @@ router = APIRouter()
 def explain_topic(req: ExplainRequest, conn: sqlite3.Connection = Depends(get_db)):
     """Generate an initial explanation for a Python topic."""
     try:
-        explanation = ai_service.explain_concept(req.topic, req.profile.dict())
+        explanation = ai_service.explain_concept(req.topic, req.profile.model_dump())
         return {"content": explanation}
     except AIServiceError as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -32,7 +32,7 @@ def ask_follow_up(req: AskRequest, conn: sqlite3.Connection = Depends(get_db)):
 
     try:
         context = [{"role": msg.role, "content": msg.content} for msg in req.context]
-        answer = ai_service.answer_question(req.topic, req.question, req.profile.dict(), context)
+        answer = ai_service.answer_question(req.topic, req.question, req.profile.model_dump(), context)
         return {"content": answer}
     except AIServiceError as e:
         raise HTTPException(status_code=503, detail=str(e))

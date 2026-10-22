@@ -113,7 +113,7 @@ export const api = {
     difficulty: string,
     questionCount: number,
     profile: LearnerProfile
-  ): Promise<{ questions: QuizQuestion[]; topic: string; difficulty: string }> {
+  ): Promise<{ quizId: string; questions: QuizQuestion[]; topic: string; difficulty: string }> {
     const res = await client.post('/quiz/create', {
       topicId,
       topic,
@@ -125,11 +125,12 @@ export const api = {
   },
 
   async submitQuiz(data: {
+    quizId: string;
     learnerId: string;
     topicId: string;
     topicTitle: string;
     difficulty: string;
-    questions: QuizQuestion[];
+    questions?: QuizQuestion[];
     answers: Record<string, string>;
     timeTakenSeconds: number;
     profile: LearnerProfile;

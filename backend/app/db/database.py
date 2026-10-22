@@ -11,7 +11,7 @@ DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__f
 
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = sqlite3.connect(DATABASE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -118,4 +118,42 @@ def init_db():
         );
 
         CREATE INDEX IF NOT EXISTS idx_topic_progress_learner_id ON topic_progress(learner_id);
+
+        CREATE TABLE IF NOT EXISTS quiz_sessions (
+            id TEXT PRIMARY KEY,
+            learner_id TEXT NOT NULL,
+            topic_id TEXT NOT NULL,
+            topic_title TEXT NOT NULL,
+            difficulty TEXT DEFAULT 'easy',
+            questions_json TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            score REAL DEFAULT 0.0,
+            correct_count INTEGER DEFAULT 0,
+            total_questions INTEGER DEFAULT 0,
+            time_taken_seconds INTEGER DEFAULT 0,
+            result_json TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            submitted_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_quiz_sessions_learner_id ON quiz_sessions(learner_id);
+
+        CREATE TABLE IF NOT EXISTS practice_sessions (
+            id TEXT PRIMARY KEY,
+            learner_id TEXT NOT NULL,
+            topic_id TEXT NOT NULL,
+            topic_title TEXT NOT NULL,
+            difficulty TEXT DEFAULT 'easy',
+            question_type TEXT NOT NULL,
+            question_text TEXT NOT NULL,
+            options_json TEXT,
+            expected_answer TEXT NOT NULL,
+            explanation TEXT NOT NULL,
+            hint TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            created_at TEXT DEFAULT (datetime('now')),
+            evaluated_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_practice_sessions_learner_id ON practice_sessions(learner_id);
         """)

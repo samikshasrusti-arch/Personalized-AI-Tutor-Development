@@ -45,6 +45,7 @@ export const QuizWorkspace = () => {
   const [quizStarted, setQuizStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [quizId, setQuizId] = useState<string>('');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -89,6 +90,7 @@ export const QuizWorkspace = () => {
         profile
       );
       if (res.questions && res.questions.length > 0) {
+        setQuizId(res.quizId || '');
         setQuestions(res.questions);
         setQuizStarted(true);
       } else {
@@ -123,6 +125,7 @@ export const QuizWorkspace = () => {
 
     try {
       const result = await api.submitQuiz({
+        quizId: quizId,
         learnerId: profile.learnerId,
         topicId: selectedTopic,
         topicTitle: topicTitle,

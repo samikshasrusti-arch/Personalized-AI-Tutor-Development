@@ -1,3 +1,4 @@
+import re
 import sqlite3
 from fastapi import APIRouter, HTTPException, Depends
 from app.services.progress_service import get_progress_summary, TOPICS, TOPIC_MAP
@@ -7,26 +8,37 @@ from app.db.database import get_db
 router = APIRouter()
 
 
+def validate_learner_id(learner_id: str):
+    """Validate learner ID format to prevent malformed or malicious inputs."""
+    if not learner_id or not re.match(r"^[a-zA-Z0-9_\-]{1,64}$", learner_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid learner ID format. Must be alphanumeric and 1-64 characters."
+        )
+
+
 @router.get("/{learner_id}")
 def get_progress(learner_id: str, conn: sqlite3.Connection = Depends(get_db)):
     """Return overall progress summary for a learner."""
+    validate_learner_id(learner_id)
     try:
         summary = get_progress_summary(conn, learner_id)
-        return summary.dict()
+        return summary.model_dump()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve learner progress.")
 
 
 @router.get("/{learner_id}/topics")
 def get_topic_progress(learner_id: str, conn: sqlite3.Connection = Depends(get_db)):
     """Return topic-level progress with mastery levels."""
+    validate_learner_id(learner_id)
     try:
         summary = get_progress_summary(conn, learner_id)
         topic_map = {tp.topicId: tp for tp in summary.topicProgress}
         result = []
         for t in TOPICS:
             if t["id"] in topic_map:
-                result.append(topic_map[t["id"]].dict())
+                result.append(topic_map[t["id"]].model_dump())
             else:
                 result.append({
                     "topicId": t["id"],
@@ -40,12 +52,14 @@ def get_topic_progress(learner_id: str, conn: sqlite3.Connection = Depends(get_d
                 })
         return {"topics": result}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve topic progress.")
 
 
 @router.get("/{learner_id}/recommendations")
+@router.get("/{learner_id}/recommendation")
 def get_recommendations(learner_id: str, conn: sqlite3.Connection = Depends(get_db)):
     """Return a personalized learning recommendation."""
+    validate_learner_id(learner_id)
     try:
         summary = get_progress_summary(conn, learner_id)
 
@@ -76,5 +90,5 @@ def get_recommendations(learner_id: str, conn: sqlite3.Connection = Depends(get_
         return rec
     except AIServiceError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to compute recommendations.")
